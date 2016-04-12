@@ -1,0 +1,109 @@
+---
+title: "SI618 HW2"
+author: "Joshua Gardner"
+date: "March 16, 2016"
+output: html_document
+---
+
+#Loading and Cleaning Data (5 points)
+First the TSV data file created in part 1 is loaded into a R data frame using the **read.table()** function. The city, state and main\_category columns should be converted to factors. Then listwise deletion (http://en.wikipedia.org/wiki/Listwise_deletion) is applied to remove records with missing data (use the **na.omit()** function). Here is the summary of the data frame:
+```{r, echo=FALSE}
+yelpdata = read.table("si618_hw2_jpgard_output.tsv", sep = '\t', header = TRUE, quote = "", comment.char = "", stringsAsFactors = FALSE)
+yelpdata = na.omit(yelpdata)
+yelpdata$city = factor(yelpdata$city)
+yelpdata$state = factor(yelpdata$state)
+yelpdata$main_category = factor(yelpdata$main_category)
+summary(yelpdata)
+```
+
+
+#Histograms of Star Ratings (10 points)
+Histograms of star ratings are plotted with the **qplot()** function. Both actual counts and density plot are shown. (Use **binwidth=1)**
+
+```{r, echo=FALSE, fig.width=12.5, fig.height=5}
+library(ggplot2)
+ggplot(yelpdata, aes(x = stars, fill = state)) + geom_histogram(binwidth = 1, alpha = 0.5) + facet_grid(. ~ state) + scale_x_continuous(breaks = c(1,2,3,4,5)) + scale_alpha(guide = 'none') + xlab("Stars")
+#qplot(stars, data = yelpdata, facets = .~state, geom = "histogram", binwidth = 1, fill = state, alpha = 0.5, main = "Histograms of Star Ratings") + xlim(1,6) + scale_alpha(guide = 'none') + scale_x_continuous(breaks = c(1,2,3,4,5))
+ggplot(yelpdata, aes(x = stars, fill = state)) + geom_histogram(aes(y = ..density..), binwidth = 1, alpha = 0.5) + facet_grid(. ~ state) + xlim(1, 6) + scale_x_continuous(breaks = c(1,2,3,4,5)) + ggtitle("Histograms of Star Ratings") + scale_alpha(guide = 'none') + xlab("Stars")
+```
+
+#Histograms of Review Counts (10 points)
+Histograms of review counts are plotted with the **qplot()** function. (Use **binwidth=10**)
+
+```{r, echo=FALSE, fig.width=9, fig.height=6}
+ggplot(yelpdata, aes(x = review_count)) + geom_histogram(binwidth = 10, alpha = 0.5) + xlab("Review Counts") + ggtitle("Histograms of Review Counts") + scale_alpha(guide = 'none')
+
+
+```
+
+We can see that the distribution of review counts has a long tail. To zoom in on the bars to the left of the 200 mark, we use the **subset()** function to select just the data with review count <= 200. And then plot the histogram again with **binwidth=1**.
+
+```{r, echo=FALSE, fig.width=9, fig.height=6}
+yelpdata2 = subset(yelpdata, review_count <= 200)
+ggplot(yelpdata2, aes(x = review_count)) + geom_histogram(binwidth = 1, alpha = 0.5) + xlab("Review Counts") + ggtitle("Histograms of Review Counts (Filtered)") + scale_alpha(guide = 'none')
+```
+
+#Boxplot of Star Ratings by States (10 points)
+
+```{r, echo=FALSE, fig.width=9, fig.height=6}
+#ggplot(yelpdata, aes(x = state)) + geom_boxplot(aes(y = stars, colour = state, fill = state, alpha = 0.5))
+
+qplot(state, stars, data = yelpdata, geom = "boxplot", colour = state, fill = state, alpha = 0.5, main = "Star Ratings By States") + scale_alpha(guide = 'none') + ylab("Stars") + theme(axis.title.x=element_blank())
+```
+
+#Jittered Plot of Star Ratings by States (10 points)
+
+```{r, echo=FALSE, fig.width=9, fig.height=6}
+#ggplot(yelpdata, aes(x = state)) + geom_boxplot(aes(y = stars, colour = state, fill = state, alpha = 0.5))
+
+qplot(state, stars, data = yelpdata, geom = "jitter", colour = state, fill = state, alpha = 0.5, main = "Star Ratings By States") + scale_alpha(guide = 'none') + ylab("Stars") + theme(axis.title.x=element_blank())
+```
+
+#Bar Chart of Number of Businesses by State (10 points)
+
+The states should be orderd by descreading height of bars.
+
+```{r, echo=FALSE, fig.width=9, fig.height=6}
+
+qplot(reorder(state, state, function(x)-length(x)), data = yelpdata, alpha = 0.5) + scale_alpha(guide = 'none')
+```
+
+#Jittered Scatterplot of Stars and Review Counts (10 points)
+
+```{r, echo=FALSE, fig.width=9, fig.height=6}
+qplot(stars, review_count, data = yelpdata, colour = state, geom = "jitter", alpha = 0.5, size = 1) + scale_alpha(guide = 'none') + scale_size(guide = 'none')
+```
+
+
+#Slice and Dice Data with plyr
+
+##Subsetting Data (10 points)
+
+We first rank the business in each city for each main category. Then top 5 ranked businesses in each city for each main category are found. We are interested in is the top 5 business with main category of “Chinese” in each city. The data should be ordered by city names, and then by ranks. The result is listed below.
+
+```{r, echo=FALSE}
+library(plyr)
+chinese = subset(yelpdata, main_category == "Chinese")
+chineseranks = ddply(chinese, .(city), transform, rank = rank(-stars, tie = "first"))
+chinesetop5 = subset(chineseranks[,c(2,1,7,4)], rank <= 5)
+arrange(chinesetop5, city, rank)
+
+#in single line:
+#arrange(subset(ddply(chinese, .(city), transform, rank = rank(-stars, tie = "first"))[,c(2,1,7)], rank <= 5), city, rank)
+```
+
+#Summarize Data (10 points)
+Next, we compute the mean review counts of all businesses for each state and plot the bar chart below.
+
+```{r}
+meanreviews = ddply(yelpdata, .(state), summarise, mean_reviews = mean(review_count))
+qplot(reorder(state, mean_reviews, function(x)-x), mean_reviews, data = meanreviews, geom = "bar", stat = "identity", alpha = 0.5) + scale_alpha(guide = 'none') + ylab("Mean Review Counts")
+```
+
+
+
+
+
+
+
+
