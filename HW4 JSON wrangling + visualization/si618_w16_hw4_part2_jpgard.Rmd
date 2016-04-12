@@ -1,0 +1,33 @@
+---
+title: "SI 618 HW4"
+author: "Joshua Gardner"
+date: "April 4, 2016"
+output: html_document
+---
+#Part 2. Linear Regression on Sentiment Scores, in R (40 points)
+
+Now that we have the average star and average sentiment score for 13481 businesses, we'd like to know if the sentiment scores and stars are correlated. If they do correlate, the sentiment scores make sense and a linear model could be used to predict the star ratings of future reviews with some accuracy.  If they are not correlated, the sentiment scores will be less useful in predicting star ratings.
+
+####(15 points)  First, create a scatterplot for average stars and average sentiment scores and add a linear regression line without adding shaded confidence region. You can look at http://www.cookbook-r.com/Graphs/Scatterplots_(ggplot2)/ to see how to do that using ggplot2. Save your plot as a PDF file. 
+
+```{r,echo=FALSE}
+library(ggplot2)
+yelp_data = read.table("star_sentimentscore.txt", sep = "\t", col.names = c("avg_star_rating", "avg_review_sentiment"))
+
+ggplot(yelp_data, aes(x=avg_star_rating, y=avg_review_sentiment)) + geom_point() + geom_smooth(method=lm, se=FALSE) + ggtitle("Average Star Rating and Review Sentiment\n in the Yelp Academic Dataset")
+```
+
+####(15 points)  The scatterplot you just created contains 13481 dots. Lots of dots are actually on top each other. For data of this size, a good idea is to do hex binning. Please check out http://docs.ggplot2.org/current/stat_binhex.html for how to do it. Save your plot as a PDF file. 
+
+```{r, echo=FALSE}
+
+ggplot(yelp_data, aes(x=avg_star_rating, y=avg_review_sentiment)) + stat_binhex() + ggtitle("Average Star Rating and Review Sentiment\nin the Yelp Academic Dataset")
+```
+
+####(10 points)  Finally, we also want to compute the Pearson's correlation coefficient  described in class between stars and scores. See http://www.statmethods.net/stats/correlations.html for how to compute it. Take note of the correlation number you got. 
+
+```{r}
+cor(yelp_data, method ="pearson")
+```
+
+The Pearson's correlation coefficient between stars and scores is 0.3751962, meaning that there is a positive association between average star rating and average review sentiment for the businesses in reviews in the Yelp Academic Dataset--as average star rating increases, average review sentiment also increases, on average.

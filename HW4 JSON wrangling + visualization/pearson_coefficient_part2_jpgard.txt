@@ -1,0 +1,3 @@
+0.3751962
+
+The Pearson's correlation coefficient between stars and scores is 0.3751962, meaning that there is a positive association between average star rating and average review sentiment for the businesses in reviews in the Yelp Academic Dataset--as average star rating increases, average review sentiment also increases, on average.
